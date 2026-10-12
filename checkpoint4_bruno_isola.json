@@ -1,0 +1,1067 @@
+{
+  "name": "checkpoint4_bruno_isola",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "simple": false,
+        "filters": {
+          "q": "to:bruisola12+soporte@gmail.com"
+        },
+        "options": {}
+      },
+      "id": "1e3b621d-f437-481d-a30d-f9684387ecf3",
+      "name": "Gmail Trigger - Casilla de soporte",
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        -2256,
+        208
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "ptTgZYIqoZ1c1YzM",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": false,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "e74893a5-1e15-4782-ba2e-eacb77b9449e",
+              "leftValue": "={{ $json.subject }}",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              },
+              "rightValue": "Auto-reply"
+            },
+            {
+              "id": "3d9e5e89-3976-4615-bd1c-c74f2c70211d",
+              "leftValue": "={{ $json.subject }}",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              },
+              "rightValue": "Out of office"
+            },
+            {
+              "id": "e9135dfa-9577-4bb4-a102-d4d74931990d",
+              "leftValue": "={{ $json.subject }}",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              },
+              "rightValue": "Undeliverable"
+            },
+            {
+              "id": "55161a66-1be5-4b7d-ab08-e31b2de1b34a",
+              "leftValue": "={{ $json.from.value[0].address }}",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              },
+              "rightValue": "no-reply@"
+            }
+          ],
+          "combinator": "or"
+        },
+        "options": {}
+      },
+      "id": "a47f9bc3-fbcb-44bd-b76b-46fb7b83c34f",
+      "name": "IF Anti auto-reply (OR)",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -2048,
+        208
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "2d36a429-9502-4dbe-a977-8ee8e91b4a76",
+      "name": "Stop - Ignorar auto-respuesta",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -1824,
+        48
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e1df0266-885f-4f72-9268-dca93b3862df",
+              "name": "From",
+              "value": "={{ ($json.from?.value?.[0]?.address || '').toLowerCase().trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "b44b8f5b-bd3a-4c90-8ff2-7958e4c81d04",
+              "name": "Nombre",
+              "value": "={{ $json.from?.value?.[0]?.name || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "8e4c02bd-ebd7-4f91-8431-3d2c168763b7",
+              "name": "Subject",
+              "value": "={{ ($json.subject || '').trim() }}",
+              "type": "string"
+            },
+            {
+              "id": "10c90966-4a27-443c-9c8d-c7afa628ce1c",
+              "name": "BodyText",
+              "value": "={{ ($json.text || '').trim().slice(0, 2000) }}",
+              "type": "string"
+            },
+            {
+              "id": "93edab34-70ed-4a4e-aae7-134270d7fe6a",
+              "name": "threadId",
+              "value": "={{ $json.threadId }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "4ddafabb-2f7b-4d8a-928f-15420d823f43",
+      "name": "Set de limpieza (From, Subject, BodyText)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1824,
+        240
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "e49fbcee-2e03-4ede-b7ba-ea0090cddbb3",
+              "leftValue": "={{ $json.From }}",
+              "operator": {
+                "type": "string",
+                "operation": "contains"
+              },
+              "rightValue": "@"
+            },
+            {
+              "id": "ae4525b4-143e-490b-938a-a898c0944b08",
+              "leftValue": "={{ $json.BodyText }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "2416266f-1013-4327-b525-d2791988cb9c",
+      "name": "IF Campos obligatorios OK",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -1600,
+        240
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "4ff08435-e550-4e37-93ef-6a17e1624314",
+      "name": "Stop - Payload invalido (evita 400)",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        -1376,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "operation": "search",
+        "limit": 1,
+        "filterGroupsUi": {
+          "filterGroupsValues": [
+            {
+              "filtersUi": {
+                "filterValues": [
+                  {
+                    "propertyName": "email|string",
+                    "value": "={{ $json.From }}"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        "additionalFields": {}
+      },
+      "id": "841f6b86-3075-44cf-bf47-1e6686e7b387",
+      "name": "HubSpot - Look up contacto",
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2.1,
+      "position": [
+        -1376,
+        208
+      ],
+      "alwaysOutputData": true,
+      "credentials": {
+        "hubspotOAuth2Api": {
+          "id": "FAsroFdPPETpfXOc",
+          "name": "HubSpot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "802f2e80-fff6-47db-a990-8d8719ace4c2",
+              "leftValue": "={{ $json.id }}",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "6e18ab50-9c4b-4d6a-8082-ea97001f122e",
+      "name": "IF Contacto existe",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        -1168,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "email": "={{ $('Set de limpieza (From, Subject, BodyText)').first().json.From }}",
+        "additionalFields": {},
+        "options": {}
+      },
+      "id": "dac7640f-b061-40bc-9f79-824b4195a30d",
+      "name": "HubSpot - Update contacto existente",
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2.1,
+      "position": [
+        -944,
+        112
+      ],
+      "credentials": {
+        "hubspotOAuth2Api": {
+          "id": "FAsroFdPPETpfXOc",
+          "name": "HubSpot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "email": "={{ $('Set de limpieza (From, Subject, BodyText)').first().json.From }}",
+        "additionalFields": {
+          "firstName": "={{ $('Set de limpieza (From, Subject, BodyText)').first().json.Nombre.split(' ')[0] }}",
+          "lastName": "={{ $('Set de limpieza (From, Subject, BodyText)').first().json.Nombre.split(' ').slice(1).join(' ') }}"
+        },
+        "options": {}
+      },
+      "id": "0fd92c02-9ec3-4ad2-b792-af59beb47047",
+      "name": "HubSpot - Create contacto nuevo",
+      "type": "n8n-nodes-base.hubspot",
+      "typeVersion": 2.1,
+      "position": [
+        -944,
+        304
+      ],
+      "credentials": {
+        "hubspotOAuth2Api": {
+          "id": "FAsroFdPPETpfXOc",
+          "name": "HubSpot account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Sos el Router de triaje de Rumbo Outdoor, tienda online de camping y trekking. Tu UNICA tarea es clasificar el email del cliente. Tenés PROHIBIDO responderle o resolver la consulta.\n\nTaxonomia cerrada:\n- SALES: quiere comprar, elegir un producto, precios, medios de pago, cuotas o envios de una compra futura.\n- TECH_SUPPORT: tiene un producto y necesita ayuda para usarlo, armarlo o cuidarlo.\n- BILLING: facturas, cobros, pagos hechos, reembolsos, devoluciones o reclamos.\n- OTHERS: cualquier otra cosa.\nconfidence de 0 a 1 (menos de 0.5 si es ambiguo).\n\nAsunto: {{ $('Set de limpieza (From, Subject, BodyText)').first().json.Subject }}\nCuerpo:\n{{ $('Set de limpieza (From, Subject, BodyText)').first().json.BodyText }}",
+        "hasOutputParser": true
+      },
+      "id": "e03e4f78-0d99-4f24-a0e5-1d9495d43d70",
+      "name": "Clasificador de intencion",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.5,
+      "position": [
+        -704,
+        208
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "id",
+          "value": "claude-haiku-4-5-20251001"
+        },
+        "options": {
+          "maxTokensToSample": 300
+        }
+      },
+      "id": "fc204342-cda1-443e-b968-fe86a23cf77e",
+      "name": "Modelo Router (Haiku)",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        -768,
+        432
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "AJoCqF3Cn9TJsdOe",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "schemaType": "manual",
+        "inputSchema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"intent\": {\n      \"type\": \"string\",\n      \"enum\": [\n        \"SALES\",\n        \"TECH_SUPPORT\",\n        \"BILLING\",\n        \"OTHERS\"\n      ]\n    },\n    \"confidence\": {\n      \"type\": \"number\"\n    },\n    \"motivo\": {\n      \"type\": \"string\"\n    }\n  },\n  \"required\": [\n    \"intent\",\n    \"confidence\",\n    \"motivo\"\n  ]\n}"
+      },
+      "id": "f51e300d-3eb4-4fc7-908f-5649471039a3",
+      "name": "Taxonomia cerrada (JSON)",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [
+        -576,
+        432
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ec8aac71-3338-4ef4-93b9-ad46896a5e65",
+              "name": "original_input",
+              "value": "={{ 'Asunto: ' + $('Set de limpieza (From, Subject, BodyText)').first().json.Subject + '\\n' + $('Set de limpieza (From, Subject, BodyText)').first().json.BodyText }}",
+              "type": "string"
+            },
+            {
+              "id": "a30b670c-3d8d-43ad-8684-77c2ff6f02be",
+              "name": "session_id",
+              "value": "={{ $('Set de limpieza (From, Subject, BodyText)').first().json.From }}",
+              "type": "string"
+            },
+            {
+              "id": "1da117c3-39cb-4f72-bfcf-f7f032d1d2f2",
+              "name": "intent",
+              "value": "={{ $json.output?.intent || 'OTHERS' }}",
+              "type": "string"
+            },
+            {
+              "id": "1f1d3111-9f6f-45b1-b761-781d4b3373fe",
+              "name": "confidence",
+              "value": "={{ $json.output?.confidence ?? 0 }}",
+              "type": "number"
+            },
+            {
+              "id": "f0a546ca-e1dd-4bb1-ad4f-69491ac80432",
+              "name": "user_name",
+              "value": "={{ $('Set de limpieza (From, Subject, BodyText)').first().json.Nombre || 'cliente' }}",
+              "type": "string"
+            },
+            {
+              "id": "ea73d458-2353-4cc8-bffc-00b2dbfd4a70",
+              "name": "last_summary",
+              "value": "={{ $('HubSpot - Create contacto nuevo').isExecuted ? 'Canal email. Primer contacto con la tienda: todavia no hay historial en el CRM.' : 'Canal email. Contacto ya registrado en HubSpot (cliente recurrente). Ya conocemos su email: no se lo pidas.' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ca972bc9-0459-4fe3-a0a0-6ee1b832bc29",
+      "name": "Preparar payload (Set)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -464,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "62d4d255-b1fa-4e58-98fd-993bf5aff3e1",
+                    "leftValue": "={{ $json.intent }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "SALES"
+                  },
+                  {
+                    "id": "dcfb7f15-ffed-495d-a133-1749b0d9da3b",
+                    "leftValue": "={{ $json.confidence }}",
+                    "operator": {
+                      "type": "number",
+                      "operation": "gte"
+                    },
+                    "rightValue": 0.5
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "SALES"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "loose",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "5f1de5d4-565e-4f2f-9498-5fd224cb90d0",
+                    "leftValue": "={{ $json.intent }}",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "rightValue": "TECH_SUPPORT"
+                  },
+                  {
+                    "id": "53c9c776-35a6-4000-b789-4228741d5089",
+                    "leftValue": "={{ $json.confidence }}",
+                    "operator": {
+                      "type": "number",
+                      "operation": "gte"
+                    },
+                    "rightValue": 0.5
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "TECH_SUPPORT"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "ESCALAR_HUMANO"
+        }
+      },
+      "id": "70c364bb-95db-4ae1-8d78-59d4bc1af602",
+      "name": "Router por intencion (Switch)",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        -240,
+        208
+      ]
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "eE8F5uhyEJw2HWZ0",
+          "cachedResultName": "M2 - Worker 1 Ventas"
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "069a5ab6-a04d-4cbe-a99c-de596652c27b",
+      "name": "Llamar Worker Ventas",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        0
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 2000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "cachedResultName": "M2 - Worker 2 Soporte Tecnico",
+          "mode": "list",
+          "value": "TXGei3N9ylMc6ZQy"
+        },
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "id": "a44a4541-a09d-469f-9cbb-283b07da2dac",
+      "name": "Llamar Worker Soporte",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.2,
+      "position": [
+        0,
+        208
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 2000,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "127f3396-47ad-40aa-90ae-2977e038aa5f",
+              "leftValue": "={{ $json.status }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              },
+              "rightValue": "success"
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "id": "5324d8e0-7b27-4c4a-8d69-99b5b0f4b1dc",
+      "name": "IF Worker OK",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        224,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "7ba5494b-f950-40c0-b0b9-93eb2eea8e1e",
+              "name": "cuerpo_borrador",
+              "value": "={{ $json.data.respuesta }}",
+              "type": "string"
+            },
+            {
+              "id": "0b4aac14-7b08-4874-b3bd-58ae73d0df29",
+              "name": "worker",
+              "value": "={{ $json.worker }}",
+              "type": "string"
+            },
+            {
+              "id": "3382c923-1999-40b6-911d-0576c2da41c3",
+              "name": "estado",
+              "value": "borrador_worker",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "c527dac2-00a7-4902-b989-95767ba6a35d",
+      "name": "Texto del Worker (Set)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        448,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "770b342f-14ea-4886-a249-32e594acc872",
+              "name": "cuerpo_borrador",
+              "value": "={{ 'Hola' + ($('Set de limpieza (From, Subject, BodyText)').first().json.Nombre ? ' ' + $('Set de limpieza (From, Subject, BodyText)').first().json.Nombre.split(' ')[0] : '') + ', recibimos tu consulta. Una persona del equipo de Rumbo Outdoor la está revisando y te responde por este medio.' }}",
+              "type": "string"
+            },
+            {
+              "id": "76300ac8-b7d5-4d18-a445-dbd38baf425e",
+              "name": "worker",
+              "value": "HUMANO (fallback)",
+              "type": "string"
+            },
+            {
+              "id": "b82a1af1-989b-45dd-844a-60aca8f12bd3",
+              "name": "estado",
+              "value": "requiere_humano",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a2e4a7cd-fe0b-4656-b87f-b632ff4796dc",
+      "name": "Texto de escalamiento (Set)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        448,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "draft",
+        "subject": "={{ 'Re: ' + $('Set de limpieza (From, Subject, BodyText)').first().json.Subject }}",
+        "message": "={{ $json.cuerpo_borrador }}\n\nEquipo de Rumbo Outdoor",
+        "options": {
+          "threadId": "={{ $('Set de limpieza (From, Subject, BodyText)').first().json.threadId }}",
+          "sendTo": "={{ $('Set de limpieza (From, Subject, BodyText)').first().json.From }}"
+        }
+      },
+      "id": "a5c5b110-5ce4-4db7-8418-ac43d1fa9066",
+      "name": "Gmail - Create Draft (HITL)",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        688,
+        160
+      ],
+      "webhookId": "c100f8a1-77f4-4972-86df-1219232e242e",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "ptTgZYIqoZ1c1YzM",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6fad7a54-7f3a-4e40-a51c-670f59947a26",
+              "name": "cliente",
+              "value": "={{ $('Set de limpieza (From, Subject, BodyText)').first().json.From }}",
+              "type": "string"
+            },
+            {
+              "id": "8a6cdd59-a74c-4de8-8bf7-98eed75f8f58",
+              "name": "asunto",
+              "value": "={{ $('Set de limpieza (From, Subject, BodyText)').first().json.Subject.slice(0, 120) }}",
+              "type": "string"
+            },
+            {
+              "id": "c489fb57-e6f2-405a-b8af-856f47ee81d2",
+              "name": "intencion",
+              "value": "={{ $('Preparar payload (Set)').first().json.intent }}",
+              "type": "string"
+            },
+            {
+              "id": "e4adb583-ba07-4188-85c7-b7c55c71e1e2",
+              "name": "worker",
+              "value": "={{ $('Texto del Worker (Set)').isExecuted ? $('Texto del Worker (Set)').first().json.worker : 'HUMANO (fallback)' }}",
+              "type": "string"
+            },
+            {
+              "id": "cc0285d4-ec00-4052-9c02-48c59396de2b",
+              "name": "estado",
+              "value": "={{ $('Texto del Worker (Set)').isExecuted ? 'Borrador listo para revisar' : 'Requiere respuesta humana' }}",
+              "type": "string"
+            },
+            {
+              "id": "d95fe6c6-bcfd-4cb0-869a-190b6da2f02e",
+              "name": "contacto_hubspot",
+              "value": "={{ $('HubSpot - Create contacto nuevo').isExecuted ? 'creado' : 'actualizado' }}",
+              "type": "string"
+            },
+            {
+              "id": "338c923b-ef31-40e8-beb5-f1bd74e0a002",
+              "name": "draft_id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "217d819a-7d03-48f6-94ee-c589bbf1839b",
+      "name": "Set limpieza para Slack",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        912,
+        160
+      ]
+    },
+    {
+      "parameters": {
+        "authentication": "oAuth2",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "name",
+          "value": "#operaciones"
+        },
+        "text": "=:incoming_envelope: Nuevo email de soporte\n*Cliente:* {{ $json.cliente }} (HubSpot: {{ $json.contacto_hubspot }})\n*Asunto:* {{ $json.asunto }}\n*Intencion:* {{ $json.intencion }} | *Atendio:* {{ $json.worker }}\n*Estado:* {{ $json.estado }}. El borrador esta en Gmail y no se envia sin revision humana.",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "id": "5929788a-74d4-40db-af01-98df295e4399",
+      "name": "Slack - #operaciones",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        1120,
+        160
+      ],
+      "webhookId": "7f2a527a-29b8-444b-b199-3e110b24d785",
+      "credentials": {
+        "slackOAuth2Api": {
+          "id": "ok1VvSILBwEvpNzL",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Gmail Trigger - Casilla de soporte": {
+      "main": [
+        [
+          {
+            "node": "IF Anti auto-reply (OR)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Anti auto-reply (OR)": {
+      "main": [
+        [
+          {
+            "node": "Stop - Ignorar auto-respuesta",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set de limpieza (From, Subject, BodyText)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set de limpieza (From, Subject, BodyText)": {
+      "main": [
+        [
+          {
+            "node": "IF Campos obligatorios OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Campos obligatorios OK": {
+      "main": [
+        [
+          {
+            "node": "HubSpot - Look up contacto",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Stop - Payload invalido (evita 400)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HubSpot - Look up contacto": {
+      "main": [
+        [
+          {
+            "node": "IF Contacto existe",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Contacto existe": {
+      "main": [
+        [
+          {
+            "node": "HubSpot - Update contacto existente",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HubSpot - Create contacto nuevo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HubSpot - Update contacto existente": {
+      "main": [
+        [
+          {
+            "node": "Clasificador de intencion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HubSpot - Create contacto nuevo": {
+      "main": [
+        [
+          {
+            "node": "Clasificador de intencion",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Modelo Router (Haiku)": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Clasificador de intencion",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Taxonomia cerrada (JSON)": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "Clasificador de intencion",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clasificador de intencion": {
+      "main": [
+        [
+          {
+            "node": "Preparar payload (Set)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Preparar payload (Set)": {
+      "main": [
+        [
+          {
+            "node": "Router por intencion (Switch)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Router por intencion (Switch)": {
+      "main": [
+        [
+          {
+            "node": "Llamar Worker Ventas",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Llamar Worker Soporte",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Texto de escalamiento (Set)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Llamar Worker Ventas": {
+      "main": [
+        [
+          {
+            "node": "IF Worker OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Llamar Worker Soporte": {
+      "main": [
+        [
+          {
+            "node": "IF Worker OK",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "IF Worker OK": {
+      "main": [
+        [
+          {
+            "node": "Texto del Worker (Set)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Texto de escalamiento (Set)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Texto del Worker (Set)": {
+      "main": [
+        [
+          {
+            "node": "Gmail - Create Draft (HITL)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Texto de escalamiento (Set)": {
+      "main": [
+        [
+          {
+            "node": "Gmail - Create Draft (HITL)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gmail - Create Draft (HITL)": {
+      "main": [
+        [
+          {
+            "node": "Set limpieza para Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set limpieza para Slack": {
+      "main": [
+        [
+          {
+            "node": "Slack - #operaciones",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": true
+  },
+  "versionId": "c4750ed4-00f9-4163-b04f-5776e48f527c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "aiBuilderAssisted": true,
+    "builderVariant": "mcp",
+    "instanceId": "21c1e81efc1741fdd002820ebb1b16e75c657ea0c9a50c9932638cb11bfcd520"
+  },
+  "nodeGroups": [],
+  "id": "wuKhTGzYz2KAqAG4",
+  "tags": []
+}
