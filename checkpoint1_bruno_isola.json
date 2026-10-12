@@ -1,0 +1,177 @@
+{
+  "name": "checkpoint1_bruno_isola",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "9b5afcdd-7395-4463-9fa2-684a09db2126",
+      "name": "Chat Trigger",
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "c1b2d3e4-0001-4a01-9001-0000000000aa"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.chatInput }}",
+        "options": {
+          "systemMessage": "# ROL\nSos el Asistente de Triaje de Soporte de Rumbo Outdoor, una tienda online argentina de equipamiento de camping y trekking. Atendés el primer contacto de clientes por chat.\n\n# AMBITO\nPodés: responder consultas generales de soporte, pedir los datos que falten (nombre, email, numero de pedido) y derivar el caso a una persona del equipo con la herramienta escalar_a_humano.\nNO tenés permitido: prometer reembolsos, aplicar descuentos, modificar precios ni presupuestos, confirmar plazos de entrega que no te hayan informado, dar informacion de un pedido a alguien que no sea su titular, ni opinar sobre temas ajenos a la tienda.\n\n# OBJETIVO\nQue cada consulta termine en uno de dos resultados: resuelta en el chat con una respuesta breve y correcta, o derivada a una persona con el contexto completo para que nadie tenga que volver a preguntarle lo mismo al cliente.\n\n# REGLAS Y ESCALAMIENTO\n1. Respondé en español rioplatense, claro y amable, en un maximo de 4 oraciones. No uses emojis.\n2. No uses lenguaje inclusivo: nada de terminaciones en e, x o arroba. Usá el español estandar.\n3. No inventes informacion. Si no tenés el dato, decilo y ofrecé derivar el caso.\n4. Usá la herramienta escalar_a_humano SOLO cuando el cliente pida un reembolso, una devolucion o una cotizacion personalizada, haga un reclamo legal, esté enojado o pida hablar con una persona. En cualquier otro caso respondé vos y no uses la herramienta.\n5. Antes de escalar, pedí nombre y email si todavia no los tenés. Si el cliente no los quiere dar, escalá igual con lo que haya.\n6. Despues de escalar, detené el ciclo y respondé exactamente: \"Transferi tu caso a revision humana. Una persona del equipo te va a contactar por email.\"\n7. Usá la herramienta como maximo una vez por conversacion. Si falla, informá que hubo un problema y pedile al cliente que escriba a soporte.",
+          "maxIterations": 6
+        }
+      },
+      "id": "32566b2c-09a9-40bc-be8d-8e19b0097977",
+      "name": "AI Agent (Tools Agent)",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        272,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "id",
+          "value": "claude-sonnet-4-5-20250929"
+        },
+        "options": {
+          "maxTokensToSample": 1024
+        }
+      },
+      "id": "81524e96-90e8-425e-82a0-baa070bed251",
+      "name": "Anthropic Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatAnthropic",
+      "typeVersion": 1.3,
+      "position": [
+        192,
+        240
+      ],
+      "credentials": {
+        "anthropicApi": {
+          "id": "AJoCqF3Cn9TJsdOe",
+          "name": "Anthropic account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "descriptionType": "manual",
+        "toolDescription": "Usá esta herramienta exclusivamente para derivar un caso de soporte a una persona del equipo de Rumbo Outdoor por email. Activala SOLO cuando el cliente pide un reembolso, una devolucion o una cotizacion personalizada, hace un reclamo legal, se muestra enojado o pide hablar con una persona. NO la uses para consultas generales, saludos ni preguntas que podés responder vos. El mensaje tiene que incluir: nombre y email del cliente si los dio, la consulta original textual y el motivo detectado para escalar.",
+        "sendTo": "bruisola12@gmail.com",
+        "subject": "Rumbo Outdoor: cliente requiere atencion humana",
+        "emailType": "text",
+        "message": "={{ $fromAI('mensaje', 'Texto del email para el equipo de soporte: nombre y email del cliente, consulta original textual y motivo detectado para escalar', 'string') }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "fdae317a-c8ab-4d36-89f4-9aab21535211",
+      "name": "escalar_a_humano",
+      "type": "n8n-nodes-base.gmailTool",
+      "typeVersion": 2.1,
+      "position": [
+        400,
+        240
+      ],
+      "webhookId": "c1b2d3e4-0004-4a01-9001-0000000000bb",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "ptTgZYIqoZ1c1YzM",
+          "name": "Gmail account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "bruisola12@gmail.com",
+        "subject": "=Tarea completada | Rumbo Outdoor | ejecucion {{ $execution.id }}",
+        "emailType": "text",
+        "message": "=Tarea completada\n\nLOG DE AUDITORIA DEL AGENTE\nFecha: {{ $now.toISO() }}\nEjecucion: {{ $execution.id }}\nSesion: {{ $('Chat Trigger').item.json.sessionId }}\n\nConsulta del cliente:\n{{ $('Chat Trigger').item.json.chatInput }}\n\nRespuesta final del agente:\n{{ $json.output }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "id": "cca548ce-8802-4d04-bde4-bcd502c3d9a4",
+      "name": "Gmail - Log Tarea completada",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        624,
+        0
+      ],
+      "webhookId": "c1b2d3e4-0005-4a01-9001-0000000000cc",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "ptTgZYIqoZ1c1YzM",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Chat Trigger": {
+      "main": [
+        [
+          {
+            "node": "AI Agent (Tools Agent)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent (Tools Agent)",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "escalar_a_humano": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent (Tools Agent)",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent (Tools Agent)": {
+      "main": [
+        [
+          {
+            "node": "Gmail - Log Tarea completada",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "949ede0a-9a57-4f0a-99bf-1c9d2c901cb8",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "21c1e81efc1741fdd002820ebb1b16e75c657ea0c9a50c9932638cb11bfcd520"
+  },
+  "nodeGroups": [],
+  "id": "pVeTru4CO3idhi1y",
+  "tags": []
+}
